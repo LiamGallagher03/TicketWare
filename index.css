@@ -86,6 +86,21 @@ body {
 
 .form p {
     margin-top: 15px;
+}
+
+.password-requirement {
+    margin-top: 5px;
+    font-size: 14px;
+    color: red;
+}
+
+.password-requirement.valid {
+    color: green;
+}
+
+.form p[id$="-error"] {
+    margin-top: 5px;
+    font-size: 14px;
     color: red;
 }
 
