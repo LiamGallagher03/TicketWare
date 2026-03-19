@@ -11,6 +11,9 @@
 <body>
 
     <div class="container">
+        <div id ="title">
+            <h2>TicketWare</h2>
+        </div>
         <div class="form-container">
             <div class="form-toggle">
                 <button id="login-toggle" class="active">Log In</button>
@@ -21,6 +24,7 @@
                 <h2>Log In</h2>
                 <input type="email" id="login-email" placeholder="Email" required>
                 <input type="password" id="login-password" placeholder="Password" required>
+                <p id="login-password-error"></p>
                 <button type="submit">Log In</button>
                 <p id="login-message"></p>
             </form>
@@ -30,6 +34,11 @@
                 <input type="email" id="signup-email" placeholder="Email" required>
                 <input type="password" id="signup-password" placeholder="Password" required>
                 <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+                <p id="signup-password-length" class="password-requirement">Must be between 8 and 64 characters long.</p>
+                <p id="signup-password-upperlower" class="password-requirement">Must contain both uppercase and lowercase letters.</p>
+                <p id="signup-password-digit" class="password-requirement">Must contain at least one digit.</p>
+                <p id="signup-password-special" class="password-requirement">Must contain at least one special character.</p>
+                <p id="confirm-password-error"></p>
                 <button type="submit">Sign Up</button>
                 <p id="signup-message"></p>
             </form>
