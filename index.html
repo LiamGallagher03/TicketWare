@@ -3,17 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Project</title>
-
-    <!-- CSS -->
-    <link rel="stylesheet" href="index.css">
+    <title>Help Desk Landing Page</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <h1>Hello, world!</h1>
-    <button id="btn">Click me</button>
+    <header class="top-bar">
+        <div class="user-greeting">Welcome, <span>Guest</span></div>
+    </header>
 
-    <!-- JavaScript -->
-    <script src="script.js"></script>
+    <main class="container">
+        <h1>Support Dashboard</h1>
+        <p>What would you like to do today?</p>
+        
+        <div class="button-group">
+            <a href="new-ticket.html" class="btn btn-primary">Submit New Ticket</a>
+            <a href="view-tickets.html" class="btn btn-secondary">View Tickets</a>
+        </div>
+    </main>
+
 </body>
 </html>
