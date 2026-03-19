@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const signupMessage = document.getElementById("signup-message");
     const signupPasswordInput = document.getElementById("signup-password");
     const signupPasswordReq = {
-        lengthLeast: document.getElementById("signup-password-length"),
+        length: document.getElementById("signup-password-length"),
         upperLower: document.getElementById("signup-password-upperlower"),
         digit: document.getElementById("signup-password-digit"),
         special: document.getElementById("signup-password-special"),
@@ -16,13 +16,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const updateSignupPasswordRequirements = (password) => {
         const hasLength = password.length >= 8 && password.length <= 64;
-        const hasUpper = /[A-Z]/.test(password);
-        const hasLower = /[a-z]/.test(password);
-        const hasUpperLower = hasUpper && hasLower;
+        const hasUpperLower = /[A-Z]/.test(password) && /[a-z]/.test(password);
         const hasDigit = /[0-9]/.test(password);
         const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
-        signupPasswordReq.lengthLeast.classList.toggle("valid", hasLength);
+        signupPasswordReq.length.classList.toggle("valid", hasLength);
         signupPasswordReq.upperLower.classList.toggle("valid", hasUpperLower);
         signupPasswordReq.digit.classList.toggle("valid", hasDigit);
         signupPasswordReq.special.classList.toggle("valid", hasSpecial);
