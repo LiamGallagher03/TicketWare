@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loginMessage.textContent = "";
         signupMessage.textContent = "";
         document.getElementById("login-password-error").textContent = "";
-        document.getElementById("signup-password-error").textContent = "";
+        document.getElementById("signup-password-error").textContent = ""; //liam - error thrown figure out why
         document.getElementById("confirm-password-error").textContent = "";
         updateSignupPasswordRequirements("");
     });
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loginMessage.textContent = "";
         signupMessage.textContent = "";
         document.getElementById("login-password-error").textContent = "";
-        document.getElementById("signup-password-error").textContent = "";
+        document.getElementById("signup-password-error").textContent = ""; //liam - error thrown figure out why
         document.getElementById("confirm-password-error").textContent = "";
         updateSignupPasswordRequirements(signupPasswordInput.value);
     });
@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loginForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const email = document.getElementById("login-email").value;
+        const username = document.getElementById("login-username").value;
         const password = document.getElementById("login-password").value;
 
         if (email && password && password.length >= 8) {
@@ -75,6 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     signupForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const email = document.getElementById("signup-email").value;
+        const username = document.getElementById("signup-username").value;
         const password = document.getElementById("signup-password").value;
         const confirmPassword = document.getElementById("confirm-password").value;
 
@@ -83,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
             signupMessage.textContent = "Signup successful!";
             signupMessage.style.color = "green";
         } else {
-            if (!email || !password || !confirmPassword) {
+            if (!email || !username ||!password || !confirmPassword) {
                 signupMessage.textContent = "Please fill in all fields.";
             } else if (password.length < 8) {
                 signupMessage.textContent = "Password must be at least 8 characters.";
