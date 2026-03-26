@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
         loginMessage.textContent = "";
         signupMessage.textContent = "";
         document.getElementById("login-password-error").textContent = "";
-        document.getElementById("signup-password-error").textContent = "";
         document.getElementById("confirm-password-error").textContent = "";
         updateSignupPasswordRequirements("");
     });
@@ -48,7 +47,6 @@ document.addEventListener("DOMContentLoaded", () => {
         loginMessage.textContent = "";
         signupMessage.textContent = "";
         document.getElementById("login-password-error").textContent = "";
-        document.getElementById("signup-password-error").textContent = "";
         document.getElementById("confirm-password-error").textContent = "";
         updateSignupPasswordRequirements(signupPasswordInput.value);
     });
@@ -57,14 +55,15 @@ document.addEventListener("DOMContentLoaded", () => {
     loginForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const email = document.getElementById("login-email").value;
+        const username = document.getElementById("login-username").value;
         const password = document.getElementById("login-password").value;
 
-        if (email && password && password.length >= 8) {
+        if (email && username && password) {
             // Simulate login success (replace with actual authentication)
             loginMessage.textContent = "Login successful!";
             loginMessage.style.color = "green";
         } else {
-            if (!email || !password) {
+            if (!email || !username || !password) {
                 loginMessage.textContent = "Please fill in all fields.";
             } 
             loginMessage.style.color = "red";
@@ -75,18 +74,17 @@ document.addEventListener("DOMContentLoaded", () => {
     signupForm.addEventListener("submit", (e) => {
         e.preventDefault();
         const email = document.getElementById("signup-email").value;
+        const username = document.getElementById("signup-username").value;
         const password = document.getElementById("signup-password").value;
         const confirmPassword = document.getElementById("confirm-password").value;
 
-        if (email && password && confirmPassword && password.length >= 8 && password === confirmPassword) {
+        if (email && username && password && confirmPassword && password === confirmPassword) {
             // Simulate signup success (replace with actual registration)
             signupMessage.textContent = "Signup successful!";
             signupMessage.style.color = "green";
         } else {
-            if (!email || !password || !confirmPassword) {
+            if (!email || !username ||!password || !confirmPassword) {
                 signupMessage.textContent = "Please fill in all fields.";
-            } else if (password.length < 8) {
-                signupMessage.textContent = "Password must be at least 8 characters.";
             } else if (password !== confirmPassword) {
                 signupMessage.textContent = "Passwords do not match.";
             }
@@ -97,31 +95,5 @@ document.addEventListener("DOMContentLoaded", () => {
     signupPasswordInput.addEventListener("input", function() {
         const password = this.value;
         updateSignupPasswordRequirements(password);
-
-        const error = document.getElementById("signup-password-error");
-        if (password.length < 8 || password.length > 64) {
-            error.textContent = "Password must be between 8 and 64 characters long.";
-        } else if (!/[A-Z]/.test(password)) {
-            error.textContent = "Password must contain at least one uppercase letter.";
-        } else if (!/[a-z]/.test(password)) {
-            error.textContent = "Password must contain at least one lowercase letter.";
-        } else if (!/[0-9]/.test(password)) {
-            error.textContent = "Password must contain at least one number.";
-        } else if (!/[!@#$%^&*(),.?\":{}|<>]/.test(password)) {
-            error.textContent = "Password must contain at least one special character.";
-        } else {
-            error.textContent = "";
-        }
-    });
-
-    document.getElementById("confirm-password").addEventListener("input", function() {
-        const password = document.getElementById("signup-password").value;
-        const confirm = this.value;
-        const error = document.getElementById("confirm-password-error");
-        if (confirm && confirm !== password) {
-            error.textContent = "Passwords do not match.";
-        } else {
-            error.textContent = "";
-        }
     });
 });
