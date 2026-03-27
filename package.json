@@ -1,0 +1,17 @@
+{
+  "name": "ticketware-main",
+  "version": "1.0.0",
+  "description": "IT ticket handling web-app",
+  "license": "ISC",
+  "author": "Willow Bitter",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "npx nodemon server",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
