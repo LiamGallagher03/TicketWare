@@ -1,0 +1,155 @@
+<<<<<<< Updated upstream
+/* Matching the original User Page Style */
+=======
+/* Basic Reset */
+>>>>>>> Stashed changes
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #f4f7f6;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Top Navigation Bar */
+.top-bar {
+    width: 100%;
+    padding: 1rem 2rem;
+    background-color: #ffffff;
+    display: flex;
+<<<<<<< Updated upstream
+    justify-content: flex-end; 
+=======
+    justify-content: flex-end; /* Puts name in the top corner */
+>>>>>>> Stashed changes
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.user-greeting span {
+    font-weight: bold;
+<<<<<<< Updated upstream
+    color: #007bff; /* Matching the original blue */
+=======
+    color: #007bff;
+>>>>>>> Stashed changes
+}
+
+/* Main Content Area */
+.container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 1rem;
+    font-size: 2.5rem;
+}
+
+<<<<<<< Updated upstream
+/* Buttons (Consistent with User page) */
+=======
+/* Buttons */
+>>>>>>> Stashed changes
+.button-group {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    text-decoration: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    color: white;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+<<<<<<< Updated upstream
+}
+
+/* Table Specific Styles */
+.table-container {
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.ticket-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    margin-top: 2rem;
+    border-radius: 8px;
+    overflow: hidden; /* Rounds the corners of the table */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.ticket-table th, .ticket-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.ticket-table th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #444;
+}
+
+/* Priority Badges */
+.prio-high {
+    color: #d9534f;
+    font-weight: bold;
+    background: #fdf2f2;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.prio-low {
+    color: #5bc0de;
+    font-weight: bold;
+    background: #f0faff;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Small Action Button */
+.btn-sm {
+    padding: 5px 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.btn-sm:hover {
+    background: #0056b3;
+=======
+>>>>>>> Stashed changes
+}
