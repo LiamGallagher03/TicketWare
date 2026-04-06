@@ -14,6 +14,34 @@ document.addEventListener("DOMContentLoaded", () => {
         special: document.getElementById("signup-password-special"),
     };
 
+    // Check for error messages from server
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+        if (error === 'password_invalid') {
+            signupMessage.textContent = "Password does not meet the requirements.";
+            signupMessage.style.color = "red";
+            signupForm.classList.add("active");
+            loginForm.classList.remove("active");
+            signupToggle.classList.add("active");
+            loginToggle.classList.remove("active");
+        } else if (error === 'password_mismatch') {
+            signupMessage.textContent = "Passwords do not match.";
+            signupMessage.style.color = "red";
+            signupForm.classList.add("active");
+            loginForm.classList.remove("active");
+            signupToggle.classList.add("active");
+            loginToggle.classList.remove("active");
+        } else if (error === 'missing_fields') {
+            signupMessage.textContent = "Please fill in all fields.";
+            signupMessage.style.color = "red";
+            signupForm.classList.add("active");
+            loginForm.classList.remove("active");
+            signupToggle.classList.add("active");
+            loginToggle.classList.remove("active");
+        }
+    }
+
     const updateSignupPasswordRequirements = (password) => {
         const hasLength = password.length >= 8 && password.length <= 64;
         const hasUpperLower = /[A-Z]/.test(password) && /[a-z]/.test(password);
@@ -51,46 +79,11 @@ document.addEventListener("DOMContentLoaded", () => {
         updateSignupPasswordRequirements(signupPasswordInput.value);
     });
 
-    // Login form submission
-    loginForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const email = document.getElementById("login-email").value;
-        const username = document.getElementById("login-username").value;
-        const password = document.getElementById("login-password").value;
+    // Login form submission - now handled server-side
+    // Removed client-side handling
 
-        if (email && username && password) {
-            // Simulate login success (replace with actual authentication)
-            loginMessage.textContent = "Login successful!";
-            loginMessage.style.color = "green";
-        } else {
-            if (!email || !username || !password) {
-                loginMessage.textContent = "Please fill in all fields.";
-            } 
-            loginMessage.style.color = "red";
-        }
-    });
-
-    // Signup form submission
-    signupForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const email = document.getElementById("signup-email").value;
-        const username = document.getElementById("signup-username").value;
-        const password = document.getElementById("signup-password").value;
-        const confirmPassword = document.getElementById("confirm-password").value;
-
-        if (email && username && password && confirmPassword && password === confirmPassword) {
-            // Simulate signup success (replace with actual registration)
-            signupMessage.textContent = "Signup successful!";
-            signupMessage.style.color = "green";
-        } else {
-            if (!email || !username ||!password || !confirmPassword) {
-                signupMessage.textContent = "Please fill in all fields.";
-            } else if (password !== confirmPassword) {
-                signupMessage.textContent = "Passwords do not match.";
-            }
-            signupMessage.style.color = "red";
-        }
-    });
+    // Signup form submission - now handled server-side
+    // Removed client-side handling
 
     signupPasswordInput.addEventListener("input", function() {
         const password = this.value;
