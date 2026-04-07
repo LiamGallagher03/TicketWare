@@ -3,24 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Help Desk Landing Page</title>
-    <link rel="stylesheet" href="style.css">
+    <title>TicketWare</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="loginP.css">
 </head>
 <body>
 
-    <header class="top-bar">
-        <div class="user-greeting">Welcome, <span>Guest</span></div>
-    </header>
-
-    <main class="container">
-        <h1>Support Dashboard</h1>
-        <p>What would you like to do today?</p>
-        
-        <div class="button-group">
-            <a href="new-ticket.html" class="btn btn-primary">Submit New Ticket</a>
-            <a href="view-tickets.html" class="btn btn-secondary">View Tickets</a>
+    <div class="container">
+        <div id ="title">
+            <h2>TicketWare</h2>
         </div>
-    </main>
+        <div class="form-container">
+            <div class="form-toggle">
+                <button id="login-toggle" class="active">Log In</button>
+                <button id="signup-toggle">Sign Up</button>
+            </div>
 
+            <form id="login-form" class="form active" action="/login" method="post">
+                <h2>Log In</h2>
+                <input type="email" id="login-email" name="login-email" placeholder="Email" required>
+                <input type="username" id="login-username" name="login-username" placeholder="Username" required>
+                <input type="password" id="login-password" name="login-password" placeholder="Password" required>
+                <p id="login-password-error"></p>
+                <button type="submit">Log In</button>
+                <p id="login-message"></p>
+            </form>
+
+            <form id="signup-form" class="form" action="/signup" method="post">
+                <h2>Sign Up</h2>
+                <input type="email" id="signup-email" name="signup-email" placeholder="Email" required>
+                <input type="username" id="signup-username" name="signup-username" placeholder="Username" required>
+                <input type="password" id="signup-password" name="signup-password" placeholder="Password" required>
+
+                <p id="signup-password-length" class="password-requirement">Must be between 8 and 64 characters long.</p>
+                <p id="signup-password-upperlower" class="password-requirement">Must contain both uppercase and lowercase letters.</p>
+                <p id="signup-password-digit" class="password-requirement">Must contain at least one digit.</p>
+                <p id="signup-password-special" class="password-requirement">Must contain at least one special character.</p>
+                
+                <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required>
+                <p id="confirm-password-error"></p>
+                <button type="submit">Sign Up</button>
+                <p id="signup-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="login-signup-page.js"></script>
 </body>
 </html>
