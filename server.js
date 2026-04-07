@@ -14,6 +14,7 @@
 const express = require('express')
 require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
+const bcrypt = require('bcrypt')
 
 
 /**
@@ -52,12 +53,40 @@ function validatePassword(password) {
     return true;
 }
 
-app.post('/login', (req, res) => {
-    // Ignore verification for now
-    res.redirect('/user-landing-page.html')
+app.post('/login', async (req, res) => {
+    const { 'login-email': email, 'login-username': username, 'login-password': password } = req.body;
+    
+    if (!email || !username || !password) {
+        return res.redirect('/?error=missing_fields');
+    }
+    
+    try {
+        const { data, error } = await supabase
+            .from('Accounts')
+            .select('Password')
+            .eq('Username', username)
+            .eq('Email', email)
+            .single();
+        
+        if (error || !data) {
+            return res.redirect('/?error=invalid_credentials');
+        }
+        
+        const isValidPassword = await bcrypt.compare(password, data.Password);
+        
+        if (!isValidPassword) {
+            return res.redirect('/?error=invalid_credentials');
+        }
+        
+        // Successful login
+        res.redirect('/user-landing-page.html');
+    } catch (err) {
+        console.error('Server error during login:', err);
+        res.redirect('/?error=server_error');
+    }
 })
 
-app.post('/signup', (req, res) => {
+app.post('/signup', async (req, res) => {
     const { 'signup-email': email, 'signup-username': username, 'signup-password': password, 'confirm-password': confirmPassword } = req.body;
     
     if (!email || !username || !password || !confirmPassword) {
@@ -72,8 +101,27 @@ app.post('/signup', (req, res) => {
         return res.redirect('/?error=password_invalid');
     }
     
-    // If all checks pass, redirect to user landing page
-    res.redirect('/user-landing-page.html')
+    try {
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        
+        const { data, error } = await supabase
+            .from('Accounts')
+            .insert([
+                { Username: username, Password: hashedPassword, Email: email }
+            ]);
+        
+        if (error) {
+            console.error('Error inserting account:', error);
+            return res.redirect('/?error=signup_failed');
+        }
+        
+        // If all checks pass, redirect to user landing page
+        res.redirect('/user-landing-page.html');
+    } catch (err) {
+        console.error('Server error during signup:', err);
+        res.redirect('/?error=server_error');
+    }
 })
 
 // Test route to fetch all accounts from Supabase
