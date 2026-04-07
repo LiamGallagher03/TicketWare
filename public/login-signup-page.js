@@ -79,12 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
         updateSignupPasswordRequirements(signupPasswordInput.value);
     });
 
-    // Login form submission - now handled server-side
-    // Removed client-side handling
-
-    // Signup form submission - now handled server-side
-    // Removed client-side handling
-
     signupPasswordInput.addEventListener("input", function() {
         const password = this.value;
         updateSignupPasswordRequirements(password);
