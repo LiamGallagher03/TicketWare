@@ -110,7 +110,7 @@ app.post('/api/create-ticket', async (req, res) => {
                     AdminID: 1,
                     Description: 'Test',
                     Status: 'O',
-                    DateCreated: null,
+                    DateCreated: new Date().toISOString(),
                     CloseDate: null
                 }
             ])
