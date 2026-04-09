@@ -79,7 +79,7 @@ app.post('/login', async (req, res) => {
         }
         
         // Successful login
-        res.redirect('/user-landing-page.html');
+        res.redirect(`/user-landing-page.html?username=${encodeURIComponent(username)}`);
     } catch (err) {
         console.error('Server error during login:', err);
         res.redirect('/?error=server_error');
@@ -117,7 +117,7 @@ app.post('/signup', async (req, res) => {
         }
         
         // If all checks pass, redirect to user landing page
-        res.redirect('/user-landing-page.html');
+        res.redirect(`/user-landing-page.html?username=${encodeURIComponent(username)}`);
     } catch (err) {
         console.error('Server error during signup:', err);
         res.redirect('/?error=server_error');
