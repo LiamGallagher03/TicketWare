@@ -18,7 +18,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     if (error) {
-        if (error === 'password_invalid') {
+        if (error === 'invalid_credentials') {
+            loginMessage.textContent = "Invalid username/email or password.";
+            loginMessage.style.color = "red";
+            loginForm.classList.add("active");
+            signupForm.classList.remove("active");
+            loginToggle.classList.add("active");
+            signupToggle.classList.remove("active");
+        } else if (error === 'missing_login_fields') {
+            loginMessage.textContent = "Please enter your username/email and password.";
+            loginMessage.style.color = "red";
+            loginForm.classList.add("active");
+            signupForm.classList.remove("active");
+            loginToggle.classList.add("active");
+            signupToggle.classList.remove("active");
+        } else if (error === 'password_invalid') {
             signupMessage.textContent = "Password does not meet the requirements.";
             signupMessage.style.color = "red";
             signupForm.classList.add("active");

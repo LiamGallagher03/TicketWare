@@ -9,44 +9,32 @@
 <body>
 
     <header class="top-bar">
-        <div class="user-greeting">Admin View: <span>My Submitted Tickets</span></div>
-        <a href="admin.html" style="margin-left: 20px; text-decoration: none; color: #666;">← Back</a>
+        <a href="/user-landing-page.html" style="margin-left: 20px; text-decoration: none; color: #666;">← Back</a>
     </header>
 
     <main class="table-container">
-        <h1>Ticket Inventory</h1>
+        <h1>My Submitted Tickets</h1>
         
         <table class="ticket-table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>User</th>
-                    <th>Issue</th>
-                    <th>Priority</th>
+                    <th>Title</th>
+                    <th>Description</th>
+                    <th>Hardware</th>
+                    <th>Serial Number</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Date Created</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="user-tickets-body">
                 <tr>
-                    <td>#1001</td>
-                    <td>jsmith88</td>
-                    <td>Laptop won't boot</td>
-                    <td><span class="prio-high">High</span></td>
-                    <td>Open</td>
-                    <td><button class="btn-sm">Edit</button></td>
-                </tr>
-                <tr>
-                    <td>#1002</td>
-                    <td>mgarcia</td>
-                    <td>Password Reset</td>
-                    <td><span class="prio-low">Low</span></td>
-                    <td>Resolved</td>
-                    <td><button class="btn-sm">Edit</button></td>
+                    <td colspan="6">Loading your tickets...</td>
                 </tr>
             </tbody>
         </table>
     </main>
+
+    <script src="/user-my-tickets.js"></script>
 
 </body>
 </html>

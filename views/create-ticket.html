@@ -8,9 +8,13 @@
     <link rel="stylesheet" href="create-ticket.css">
 </head>
 <body>
+    <header class="top-bar">
+        <a href="/user-landing-page.html" style="margin-left: 20px; text-decoration: none; color: #666;">← Back</a>
+    </header>
+
     <div class="container">
         <h1>Create Hardware Ticket</h1>
-        <form>
+        <form id="create-ticket-form">
             <div class="form-group">
                 <label for="title">Title *</label>
                 <input type="text" id="title" name="title" required>
@@ -22,17 +26,20 @@
             </div>
 
             <div class="form-group">
-                <label for="hardware-name">Hardware Name *</label>
-                <input type="text" id="hardware-name" name="hardware-name" required>
+                <label for="hardware-name">Hardware Name</label>
+                <input type="text" id="hardware-name" name="hardware-name">
             </div>
 
             <div class="form-group">
-                <label for="hardware-brand">Hardware Brand *</label>
-                <input type="text" id="hardware-brand" name="hardware-brand" required>
+                <label for="serial-number">Serial Number</label>
+                <input type="text" id="serial-number" name="serial-number">
             </div>
+
 
             <button type="submit">Create Ticket</button>
         </form>
     </div>
+
+    <script src="/create-ticket.js"></script>
 </body>
 </html>

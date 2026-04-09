@@ -22,8 +22,7 @@
 
             <form id="login-form" class="form active" action="/login" method="post">
                 <h2>Log In</h2>
-                <input type="email" id="login-email" name="login-email" placeholder="Email" required>
-                <input type="username" id="login-username" name="login-username" placeholder="Username" required>
+                <input type="text" id="login-identifier" name="login-identifier" placeholder="Username or Email" required>
                 <input type="password" id="login-password" name="login-password" placeholder="Password" required>
                 <p id="login-password-error"></p>
                 <button type="submit">Log In</button>
@@ -32,6 +31,8 @@
 
             <form id="signup-form" class="form" action="/signup" method="post">
                 <h2>Sign Up</h2>
+                <input type="text" id="signup-firstname" name="signup-firstname" placeholder="First Name" required>
+                <input type="text" id="signup-lastname" name="signup-lastname" placeholder="Last Name" required>
                 <input type="email" id="signup-email" name="signup-email" placeholder="Email" required>
                 <input type="username" id="signup-username" name="signup-username" placeholder="Username" required>
                 <input type="password" id="signup-password" name="signup-password" placeholder="Password" required>
@@ -43,6 +44,10 @@
                 
                 <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required>
                 <p id="confirm-password-error"></p>
+                <label class="checkbox-label">
+                    <input type="checkbox" id="email-updates" name="email-updates" checked>
+                    Receive email updates
+                </label>
                 <button type="submit">Sign Up</button>
                 <p id="signup-message"></p>
             </form>
