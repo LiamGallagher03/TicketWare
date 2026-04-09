@@ -20,28 +20,28 @@
                 <button id="signup-toggle">Sign Up</button>
             </div>
 
-            <form id="login-form" class="form active">
+            <form id="login-form" class="form active" action="/login" method="post">
                 <h2>Log In</h2>
-                <input type="email" id="login-email" placeholder="Email" required>
-                <input type="username" id="login-username" placeholder="Username" required>
-                <input type="password" id="login-password" placeholder="Password" required>
+                <input type="email" id="login-email" name="login-email" placeholder="Email" required>
+                <input type="username" id="login-username" name="login-username" placeholder="Username" required>
+                <input type="password" id="login-password" name="login-password" placeholder="Password" required>
                 <p id="login-password-error"></p>
                 <button type="submit">Log In</button>
                 <p id="login-message"></p>
             </form>
 
-            <form id="signup-form" class="form">
+            <form id="signup-form" class="form" action="/signup" method="post">
                 <h2>Sign Up</h2>
-                <input type="email" id="signup-email" placeholder="Email" required>
-                <input type="username" id="signup-username" placeholder="Username" required>
-                <input type="password" id="signup-password" placeholder="Password" required>
+                <input type="email" id="signup-email" name="signup-email" placeholder="Email" required>
+                <input type="username" id="signup-username" name="signup-username" placeholder="Username" required>
+                <input type="password" id="signup-password" name="signup-password" placeholder="Password" required>
 
                 <p id="signup-password-length" class="password-requirement">Must be between 8 and 64 characters long.</p>
                 <p id="signup-password-upperlower" class="password-requirement">Must contain both uppercase and lowercase letters.</p>
                 <p id="signup-password-digit" class="password-requirement">Must contain at least one digit.</p>
                 <p id="signup-password-special" class="password-requirement">Must contain at least one special character.</p>
                 
-                <input type="password" id="confirm-password" placeholder="Confirm Password" required>
+                <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm Password" required>
                 <p id="confirm-password-error"></p>
                 <button type="submit">Sign Up</button>
                 <p id="signup-message"></p>

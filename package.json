@@ -1,0 +1,21 @@
+{
+  "name": "ticketware-main",
+  "version": "1.0.0",
+  "description": "IT ticket handling web-app",
+  "license": "ISC",
+  "author": "Willow Bitter",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "npx nodemon server",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "postgres": "^3.4.9"
+  }
+}
