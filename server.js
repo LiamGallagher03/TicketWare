@@ -33,6 +33,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANO
  */
 app.use(express.static('views'))
 app.use(express.static('public'))
+app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
 
@@ -54,18 +55,18 @@ function validatePassword(password) {
 }
 
 app.post('/login', async (req, res) => {
-    const { 'login-email': email, 'login-username': username, 'login-password': password } = req.body;
+    const { 'login-identifier': identifier, 'login-password': password } = req.body;
+    const normalizedIdentifier = (identifier || '').trim();
     
-    if (!email || !username || !password) {
-        return res.redirect('/?error=missing_fields');
+    if (!normalizedIdentifier || !password) {
+        return res.redirect('/?error=missing_login_fields');
     }
     
     try {
         const { data, error } = await supabase
             .from('Accounts')
-            .select('Password, IsAdmin')
-            .eq('Username', username)
-            .eq('Email', email)
+            .select('Username, Password, IsAdmin')
+            .or(`Username.eq.${normalizedIdentifier},Email.eq.${normalizedIdentifier}`)
             .single();
         
         if (error || !data) {
@@ -80,7 +81,7 @@ app.post('/login', async (req, res) => {
         
         // Successful login
         const destination = data.IsAdmin ? 'admin-landing.html' : 'user-landing-page.html';
-        res.redirect(`/${destination}?username=${encodeURIComponent(username)}`);
+        res.redirect(`/${destination}?username=${encodeURIComponent(data.Username)}`);
     } catch (err) {
         console.error('Server error during login:', err);
         res.redirect('/?error=server_error');
@@ -88,9 +89,9 @@ app.post('/login', async (req, res) => {
 })
 
 app.post('/signup', async (req, res) => {
-    const { 'signup-email': email, 'signup-username': username, 'signup-password': password, 'confirm-password': confirmPassword } = req.body;
+    const { 'signup-firstname': firstName, 'signup-lastname': lastName, 'signup-email': email, 'signup-username': username, 'signup-password': password, 'confirm-password': confirmPassword } = req.body;
     
-    if (!email || !username || !password || !confirmPassword) {
+    if (!firstName || !lastName || !email || !username || !password || !confirmPassword) {
         return res.redirect('/?error=missing_fields');
     }
     
@@ -106,10 +107,12 @@ app.post('/signup', async (req, res) => {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         
+        const fullName = `${firstName.trim()} ${lastName.trim()}`;
+        const emailUpdates = req.body['email-updates'] === 'on';
         const { data, error } = await supabase
             .from('Accounts')
             .insert([
-                { Username: username, Password: hashedPassword, Email: email }
+                { Username: username, Password: hashedPassword, Email: email, Name: fullName, EmailUpdate: emailUpdates, IsAdmin: false }
             ]);
         
         if (error) {
@@ -148,18 +151,114 @@ app.get('/api/test-accounts', async (req, res) => {
     }
 })
 
+function resolveAccountId(accountData) {
+    return (
+        accountData.ID ??
+        accountData.Id ??
+        accountData.id ??
+        accountData.AccountID ??
+        accountData.AccountId ??
+        accountData.accountID ??
+        accountData.accountId ??
+        accountData.ClientID ??
+        accountData.ClientId ??
+        accountData.clientID ??
+        accountData.clientId
+    )
+}
+
+app.get('/api/user-tickets', async (req, res) => {
+    try {
+        const { username } = req.query
+
+        if (!username) {
+            return res.status(400).json({ error: 'username is required.' })
+        }
+
+        const { data: accountData, error: accountError } = await supabase
+            .from('Accounts')
+            .select('*')
+            .eq('Username', username)
+            .single()
+
+        if (accountError || !accountData) {
+            console.error('Error finding account for user tickets:', accountError)
+            return res.status(404).json({ error: 'Unable to find account for user.' })
+        }
+
+        const clientID = resolveAccountId(accountData)
+
+        if (clientID == null) {
+            return res.status(500).json({ error: 'Account ID column not found for ClientID mapping.' })
+        }
+
+        const { data, error } = await supabase
+            .from('Tickets')
+            .select('*')
+            .eq('ClientID', clientID)
+            .order('DateCreated', { ascending: false })
+
+        if (error) {
+            console.error('Error fetching user tickets:', error)
+            return res.status(500).json({ error: error.message })
+        }
+
+        res.json({
+            success: true,
+            count: data.length,
+            tickets: data
+        })
+    } catch (err) {
+        console.error('Server error:', err)
+        res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
 // Route to create a new ticket
 app.post('/api/create-ticket', async (req, res) => {
     try {
+        const {
+            username,
+            title,
+            description,
+            hardwareName,
+            serialNumber,
+            dateCreated
+        } = req.body;
+
+        if (!username || !title || !description) {
+            return res.status(400).json({ error: 'Missing required ticket fields.' });
+        }
+
+        const { data: accountData, error: accountError } = await supabase
+            .from('Accounts')
+            .select('*')
+            .eq('Username', username)
+            .single();
+
+        if (accountError || !accountData) {
+            console.error('Error finding account for ticket creation:', accountError);
+            return res.status(400).json({ error: 'Unable to find account for ticket creation.' });
+        }
+
+        const clientID = resolveAccountId(accountData);
+
+        if (clientID == null) {
+            return res.status(500).json({ error: 'Account ID column not found for ClientID mapping.' });
+        }
+
         const { data, error } = await supabase
             .from('Tickets')
             .insert([
                 {
-                    ClientID: 1,
+                    ClientID: clientID,
                     AdminID: 1,
-                    Description: 'Test',
+                    Title: title,
+                    Description: description,
+                    Hardware: hardwareName || null,
+                    SerialNumber: serialNumber || null,
                     Status: 'O',
-                    DateCreated: new Date().toISOString(),
+                    DateCreated: dateCreated || new Date().toISOString(),
                     CloseDate: null
                 }
             ])
