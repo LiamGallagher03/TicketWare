@@ -63,7 +63,7 @@ app.post('/login', async (req, res) => {
     try {
         const { data, error } = await supabase
             .from('Accounts')
-            .select('Password')
+            .select('Password, IsAdmin')
             .eq('Username', username)
             .eq('Email', email)
             .single();
@@ -79,7 +79,8 @@ app.post('/login', async (req, res) => {
         }
         
         // Successful login
-        res.redirect(`/user-landing-page.html?username=${encodeURIComponent(username)}`);
+        const destination = data.IsAdmin ? 'admin-landing.html' : 'user-landing-page.html';
+        res.redirect(`/${destination}?username=${encodeURIComponent(username)}`);
     } catch (err) {
         console.error('Server error during login:', err);
         res.redirect('/?error=server_error');
