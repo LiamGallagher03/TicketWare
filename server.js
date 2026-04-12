@@ -167,6 +167,23 @@ function resolveAccountId(accountData) {
     )
 }
 
+function resolveTicketIdentity(ticketData) {
+    const preferredColumns = ['ID', 'Id', 'id', 'TicketID', 'TicketId', 'ticketID', 'ticketId', 'TicketNumber', 'ticketNumber']
+
+    for (const col of preferredColumns) {
+        if (Object.prototype.hasOwnProperty.call(ticketData, col) && ticketData[col] != null) {
+            return { column: col, value: ticketData[col] }
+        }
+    }
+
+    const fallbackColumn = Object.keys(ticketData).find(k => /(^id$|ticket.?id|ticket.?number)/i.test(k) && ticketData[k] != null)
+    if (fallbackColumn) {
+        return { column: fallbackColumn, value: ticketData[fallbackColumn] }
+    }
+
+    return { column: null, value: null }
+}
+
 app.get('/api/user-tickets', async (req, res) => {
     try {
         const { username } = req.query
@@ -203,10 +220,31 @@ app.get('/api/user-tickets', async (req, res) => {
             return res.status(500).json({ error: error.message })
         }
 
+        const { data: accounts, error: accountLookupError } = await supabase
+            .from('Accounts')
+            .select('*')
+
+        if (accountLookupError) {
+            console.error('Error fetching accounts for user ticket enrichment:', accountLookupError)
+            return res.status(500).json({ error: accountLookupError.message })
+        }
+
+        const accountById = {}
+        for (const acc of accounts) {
+            const id = resolveAccountId(acc)
+            if (id != null) accountById[id] = acc
+        }
+
+        const enrichedTickets = data.map(t => ({
+            ...t,
+            AdminUsername: accountById[t.AdminID]?.Username || null,
+            AdminEmail: accountById[t.AdminID]?.Email || null
+        }))
+
         res.json({
             success: true,
-            count: data.length,
-            tickets: data
+            count: enrichedTickets.length,
+            tickets: enrichedTickets
         })
     } catch (err) {
         console.error('Server error:', err)
@@ -252,7 +290,7 @@ app.post('/api/create-ticket', async (req, res) => {
             .insert([
                 {
                     ClientID: clientID,
-                    AdminID: 1,
+                    AdminID: null,
                     Title: title,
                     Description: description,
                     Hardware: hardwareName || null,
@@ -298,6 +336,287 @@ app.get('/api/tickets', async (req, res) => {
         })
     } catch (err) {
         console.error('Server error:', err)
+        res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
+// Route to fetch all tickets enriched with usernames for admin view
+app.get('/api/admin-all-tickets', async (req, res) => {
+    try {
+        const { data: tickets, error: ticketError } = await supabase
+            .from('Tickets')
+            .select('*')
+            .order('DateCreated', { ascending: false })
+
+        if (ticketError) {
+            console.error('Error fetching tickets:', ticketError)
+            return res.status(500).json({ error: ticketError.message })
+        }
+
+        // Collect all unique account IDs we need to resolve
+        const { data: accounts, error: accountError } = await supabase
+            .from('Accounts')
+            .select('*')
+
+        if (accountError) {
+            console.error('Error fetching accounts for ticket enrichment:', accountError)
+            return res.status(500).json({ error: accountError.message })
+        }
+
+        // Build ID -> Username lookup
+        const usernameMap = {}
+        for (const acc of accounts) {
+            const id = resolveAccountId(acc)
+            if (id != null) usernameMap[id] = acc.Username
+        }
+
+        const enriched = tickets.map(t => ({
+            ...t,
+            ResolvedTicketId: resolveTicketIdentity(t).value,
+            ClientUsername: usernameMap[t.ClientID] || `ID:${t.ClientID}`,
+            AdminUsername: usernameMap[t.AdminID] || null
+        }))
+
+        res.json({ success: true, count: enriched.length, tickets: enriched })
+    } catch (err) {
+        console.error('Server error:', err)
+        res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
+// Route to fetch tickets claimed by a specific admin username
+app.get('/api/admin-my-tickets', async (req, res) => {
+    try {
+        const { username } = req.query
+
+        if (!username) {
+            return res.status(400).json({ error: 'username is required.' })
+        }
+
+        const { data: adminAccount, error: adminError } = await supabase
+            .from('Accounts')
+            .select('*')
+            .eq('Username', username)
+            .single()
+
+        if (adminError || !adminAccount) {
+            console.error('Error finding admin account for claimed tickets:', adminError)
+            return res.status(404).json({ error: 'Unable to find account for admin user.' })
+        }
+
+        const adminID = resolveAccountId(adminAccount)
+        if (adminID == null) {
+            return res.status(500).json({ error: 'Account ID column not found for AdminID mapping.' })
+        }
+
+        const { data: tickets, error: ticketError } = await supabase
+            .from('Tickets')
+            .select('*')
+            .eq('AdminID', adminID)
+            .order('DateCreated', { ascending: false })
+
+        if (ticketError) {
+            console.error('Error fetching claimed admin tickets:', ticketError)
+            return res.status(500).json({ error: ticketError.message })
+        }
+
+        const { data: accounts, error: accountError } = await supabase
+            .from('Accounts')
+            .select('*')
+
+        if (accountError) {
+            console.error('Error fetching accounts for claimed ticket enrichment:', accountError)
+            return res.status(500).json({ error: accountError.message })
+        }
+
+        const usernameMap = {}
+        for (const acc of accounts) {
+            const id = resolveAccountId(acc)
+            if (id != null) usernameMap[id] = acc.Username
+        }
+
+        const enriched = tickets.map(t => ({
+            ...t,
+            ClientUsername: usernameMap[t.ClientID] || `ID:${t.ClientID}`,
+            AdminUsername: usernameMap[t.AdminID] || null
+        }))
+
+        res.json({ success: true, count: enriched.length, tickets: enriched })
+    } catch (err) {
+        console.error('Server error:', err)
+        res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
+app.post('/api/admin-close-ticket', async (req, res) => {
+    try {
+        const { username, ticketId, selector } = req.body
+
+        if (!username) {
+            return res.status(400).json({ error: 'username is required.' })
+        }
+
+        const { data: adminAccount, error: adminError } = await supabase
+            .from('Accounts')
+            .select('*')
+            .eq('Username', username)
+            .single()
+
+        if (adminError || !adminAccount) {
+            console.error('Error finding admin account for close ticket:', adminError)
+            return res.status(404).json({ error: 'Unable to find account for admin user.' })
+        }
+
+        const adminID = resolveAccountId(adminAccount)
+        if (adminID == null) {
+            return res.status(500).json({ error: 'Account ID column not found for AdminID mapping.' })
+        }
+
+        const { data: adminTickets, error: ticketFetchError } = await supabase
+            .from('Tickets')
+            .select('*')
+            .eq('AdminID', adminID)
+
+        if (ticketFetchError) {
+            console.error('Error fetching admin tickets before close:', ticketFetchError)
+            return res.status(500).json({ error: ticketFetchError.message })
+        }
+
+        const matchedTicket = (adminTickets || []).find(t => {
+            const identity = resolveTicketIdentity(t)
+            return ticketId != null && ticketId !== '' && String(identity.value) === String(ticketId)
+        }) || (adminTickets || []).find(t => {
+            if (!selector) return false
+            return (
+                String(t.Title || '') === String(selector.Title || '') &&
+                String(t.DateCreated || '') === String(selector.DateCreated || '') &&
+                String(t.Description || '') === String(selector.Description || '')
+            )
+        })
+
+        if (!matchedTicket) {
+            return res.status(404).json({ error: 'Ticket not found for this admin.' })
+        }
+
+        const identity = resolveTicketIdentity(matchedTicket)
+        const ticketIdColumn = identity.column
+        const matchedTicketId = identity.value
+
+        if (!ticketIdColumn || matchedTicketId == null) {
+            return res.status(500).json({ error: 'Ticket ID column not found for ticket close mapping.' })
+        }
+
+        const currentStatus = (matchedTicket.Status || '').toString().toUpperCase()
+        if (currentStatus === 'C' || currentStatus === 'CLOSED') {
+            return res.json({ success: true, message: 'Ticket is already closed.' })
+        }
+
+        const { error: updateError } = await supabase
+            .from('Tickets')
+            .update({
+                Status: 'C',
+                CloseDate: new Date().toISOString()
+            })
+            .eq(ticketIdColumn, matchedTicketId)
+            .eq('AdminID', adminID)
+
+        if (updateError) {
+            console.error('Error closing ticket:', updateError)
+            return res.status(500).json({ error: updateError.message })
+        }
+
+        res.json({ success: true, message: 'Ticket closed successfully.' })
+    } catch (err) {
+        console.error('Server error while closing ticket:', err)
+        res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
+app.post('/api/admin-claim-ticket', async (req, res) => {
+    try {
+        const { username, ticketId, selector } = req.body
+
+        if (!username) {
+            return res.status(400).json({ error: 'username is required.' })
+        }
+
+        const { data: adminAccount, error: adminError } = await supabase
+            .from('Accounts')
+            .select('*')
+            .eq('Username', username)
+            .single()
+
+        if (adminError || !adminAccount) {
+            console.error('Error finding admin account for claim ticket:', adminError)
+            return res.status(404).json({ error: 'Unable to find account for admin user.' })
+        }
+
+        const adminID = resolveAccountId(adminAccount)
+        if (adminID == null) {
+            return res.status(500).json({ error: 'Account ID column not found for AdminID mapping.' })
+        }
+
+        const { data: tickets, error: ticketFetchError } = await supabase
+            .from('Tickets')
+            .select('*')
+
+        if (ticketFetchError) {
+            console.error('Error fetching tickets before claim:', ticketFetchError)
+            return res.status(500).json({ error: ticketFetchError.message })
+        }
+
+        const matchedTicket = (tickets || []).find(t => {
+            const identity = resolveTicketIdentity(t)
+            return ticketId != null && ticketId !== '' && String(identity.value) === String(ticketId)
+        }) || (tickets || []).find(t => {
+            if (!selector) return false
+            return (
+                String(t.Title || '') === String(selector.Title || '') &&
+                String(t.DateCreated || '') === String(selector.DateCreated || '') &&
+                String(t.Description || '') === String(selector.Description || '')
+            )
+        })
+
+        if (!matchedTicket) {
+            return res.status(404).json({ error: 'Ticket not found.' })
+        }
+
+        const currentStatus = (matchedTicket.Status || '').toString().toUpperCase()
+        const isOpen = currentStatus === 'O' || currentStatus === 'OPEN'
+        const isUnassigned = matchedTicket.AdminID == null
+
+        if (!isOpen || !isUnassigned) {
+            return res.status(409).json({ error: 'Ticket is no longer open and unassigned.' })
+        }
+
+        const identity = resolveTicketIdentity(matchedTicket)
+        const ticketIdColumn = identity.column
+        const matchedTicketId = identity.value
+
+        if (!ticketIdColumn || matchedTicketId == null) {
+            return res.status(500).json({ error: 'Ticket ID column not found for ticket claim mapping.' })
+        }
+
+        const { data: updatedRows, error: updateError } = await supabase
+            .from('Tickets')
+            .update({ AdminID: adminID })
+            .eq(ticketIdColumn, matchedTicketId)
+            .eq('Status', matchedTicket.Status)
+            .is('AdminID', null)
+            .select('*')
+
+        if (updateError) {
+            console.error('Error claiming ticket:', updateError)
+            return res.status(500).json({ error: updateError.message })
+        }
+
+        if (!updatedRows || updatedRows.length === 0) {
+            return res.status(409).json({ error: 'Ticket was already claimed by another admin.' })
+        }
+
+        res.json({ success: true, message: 'Ticket claimed successfully.' })
+    } catch (err) {
+        console.error('Server error while claiming ticket:', err)
         res.status(500).json({ error: 'Internal server error' })
     }
 })
