@@ -220,10 +220,31 @@ app.get('/api/user-tickets', async (req, res) => {
             return res.status(500).json({ error: error.message })
         }
 
+        const { data: accounts, error: accountLookupError } = await supabase
+            .from('Accounts')
+            .select('*')
+
+        if (accountLookupError) {
+            console.error('Error fetching accounts for user ticket enrichment:', accountLookupError)
+            return res.status(500).json({ error: accountLookupError.message })
+        }
+
+        const accountById = {}
+        for (const acc of accounts) {
+            const id = resolveAccountId(acc)
+            if (id != null) accountById[id] = acc
+        }
+
+        const enrichedTickets = data.map(t => ({
+            ...t,
+            AdminUsername: accountById[t.AdminID]?.Username || null,
+            AdminEmail: accountById[t.AdminID]?.Email || null
+        }))
+
         res.json({
             success: true,
-            count: data.length,
-            tickets: data
+            count: enrichedTickets.length,
+            tickets: enrichedTickets
         })
     } catch (err) {
         console.error('Server error:', err)
@@ -269,7 +290,7 @@ app.post('/api/create-ticket', async (req, res) => {
             .insert([
                 {
                     ClientID: clientID,
-                    AdminID: 1,
+                    AdminID: null,
                     Title: title,
                     Description: description,
                     Hardware: hardwareName || null,

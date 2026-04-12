@@ -5,36 +5,148 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Tickets - User</title>
     <link rel="stylesheet" href="adminStyle.css">
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 2rem;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        .modal-box h2 {
+            margin-bottom: 1.2rem;
+            font-size: 1.2rem;
+            color: #333;
+        }
+        .modal-field {
+            margin-bottom: 0.85rem;
+        }
+        .modal-field .label {
+            font-weight: 600;
+            color: #555;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .modal-field .value {
+            margin-top: 2px;
+            color: #222;
+        }
+        .modal-close {
+            position: absolute;
+            top: 0.75rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: #888;
+            line-height: 1;
+        }
+        .modal-close:hover { color: #333; }
+
+        .status-open    { color: #e67e22; font-weight: 600; }
+        .status-closed  { color: #27ae60; font-weight: 600; }
+        .status-pending { color: #2980b9; font-weight: 600; }
+
+        .toolbar {
+            margin-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .toolbar label {
+            font-weight: 600;
+            color: #444;
+        }
+        .toolbar select {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background: #fff;
+            color: #333;
+        }
+    </style>
 </head>
 <body>
 
     <header class="top-bar">
-        <a href="/user-landing-page.html" style="margin-left: 20px; text-decoration: none; color: #666;">← Back</a>
+        <div class="user-greeting">User View: <span>My Submitted Tickets</span></div>
+        <a href="user-landing-page.html" style="margin-left: 20px; text-decoration: none; color: #666;">← Back</a>
     </header>
 
     <main class="table-container">
-        <h1>My Submitted Tickets</h1>
-        
+        <h1>My Tickets</h1>
+
+        <div class="toolbar">
+            <label for="status-filter">Filter by status:</label>
+            <select id="status-filter">
+                <option value="all">All</option>
+                <option value="open">Open</option>
+                <option value="pending">Pending</option>
+                <option value="closed">Closed</option>
+            </select>
+        </div>
+
         <table class="ticket-table">
             <thead>
                 <tr>
                     <th>Title</th>
-                    <th>Description</th>
-                    <th>Hardware</th>
-                    <th>Serial Number</th>
-                    <th>Status</th>
                     <th>Date Created</th>
+                    <th>Details</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="user-tickets-body">
-                <tr>
-                    <td colspan="6">Loading your tickets...</td>
-                </tr>
+            <tbody id="ticket-tbody">
+                <tr><td colspan="5" style="text-align:center;padding:2rem;color:#888;">Loading tickets...</td></tr>
             </tbody>
         </table>
     </main>
 
-    <script src="/user-my-tickets.js"></script>
+    <div class="modal-overlay" id="detail-modal">
+        <div class="modal-box">
+            <button class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
+            <h2>Ticket Details</h2>
+            <div class="modal-field">
+                <div class="label">Assigned Admin</div>
+                <div class="value" id="modal-admin"></div>
+            </div>
+            <div class="modal-field">
+                <div class="label">Assigned Admin Email</div>
+                <div class="value" id="modal-admin-email"></div>
+            </div>
+            <div class="modal-field">
+                <div class="label">Description</div>
+                <div class="value" id="modal-description"></div>
+            </div>
+            <div class="modal-field">
+                <div class="label">Hardware</div>
+                <div class="value" id="modal-hardware"></div>
+            </div>
+            <div class="modal-field">
+                <div class="label">Serial Number</div>
+                <div class="value" id="modal-serial"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="user-my-tickets.js"></script>
 
 </body>
 </html>
