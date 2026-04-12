@@ -134,3 +134,11 @@ h1 {
 .btn-sm:hover {
     background: #0056b3;
 }
+
+.btn-claim {
+    background: #2e9f4d;
+}
+
+.btn-claim:hover {
+    background: #247f3d;
+}

@@ -532,6 +532,95 @@ app.post('/api/admin-close-ticket', async (req, res) => {
     }
 })
 
+app.post('/api/admin-claim-ticket', async (req, res) => {
+    try {
+        const { username, ticketId, selector } = req.body
+
+        if (!username) {
+            return res.status(400).json({ error: 'username is required.' })
+        }
+
+        const { data: adminAccount, error: adminError } = await supabase
+            .from('Accounts')
+            .select('*')
+            .eq('Username', username)
+            .single()
+
+        if (adminError || !adminAccount) {
+            console.error('Error finding admin account for claim ticket:', adminError)
+            return res.status(404).json({ error: 'Unable to find account for admin user.' })
+        }
+
+        const adminID = resolveAccountId(adminAccount)
+        if (adminID == null) {
+            return res.status(500).json({ error: 'Account ID column not found for AdminID mapping.' })
+        }
+
+        const { data: tickets, error: ticketFetchError } = await supabase
+            .from('Tickets')
+            .select('*')
+
+        if (ticketFetchError) {
+            console.error('Error fetching tickets before claim:', ticketFetchError)
+            return res.status(500).json({ error: ticketFetchError.message })
+        }
+
+        const matchedTicket = (tickets || []).find(t => {
+            const identity = resolveTicketIdentity(t)
+            return ticketId != null && ticketId !== '' && String(identity.value) === String(ticketId)
+        }) || (tickets || []).find(t => {
+            if (!selector) return false
+            return (
+                String(t.Title || '') === String(selector.Title || '') &&
+                String(t.DateCreated || '') === String(selector.DateCreated || '') &&
+                String(t.Description || '') === String(selector.Description || '')
+            )
+        })
+
+        if (!matchedTicket) {
+            return res.status(404).json({ error: 'Ticket not found.' })
+        }
+
+        const currentStatus = (matchedTicket.Status || '').toString().toUpperCase()
+        const isOpen = currentStatus === 'O' || currentStatus === 'OPEN'
+        const isUnassigned = matchedTicket.AdminID == null
+
+        if (!isOpen || !isUnassigned) {
+            return res.status(409).json({ error: 'Ticket is no longer open and unassigned.' })
+        }
+
+        const identity = resolveTicketIdentity(matchedTicket)
+        const ticketIdColumn = identity.column
+        const matchedTicketId = identity.value
+
+        if (!ticketIdColumn || matchedTicketId == null) {
+            return res.status(500).json({ error: 'Ticket ID column not found for ticket claim mapping.' })
+        }
+
+        const { data: updatedRows, error: updateError } = await supabase
+            .from('Tickets')
+            .update({ AdminID: adminID })
+            .eq(ticketIdColumn, matchedTicketId)
+            .eq('Status', matchedTicket.Status)
+            .is('AdminID', null)
+            .select('*')
+
+        if (updateError) {
+            console.error('Error claiming ticket:', updateError)
+            return res.status(500).json({ error: updateError.message })
+        }
+
+        if (!updatedRows || updatedRows.length === 0) {
+            return res.status(409).json({ error: 'Ticket was already claimed by another admin.' })
+        }
+
+        res.json({ success: true, message: 'Ticket claimed successfully.' })
+    } catch (err) {
+        console.error('Server error while claiming ticket:', err)
+        res.status(500).json({ error: 'Internal server error' })
+    }
+})
+
 /**
  * Starts the server listening on PORT, and logs to the console that server has successfully started on PORT
  */

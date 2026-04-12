@@ -2,6 +2,7 @@ const tbody = document.getElementById('ticket-tbody');
 const modal = document.getElementById('detail-modal');
 const modalClose = document.getElementById('modal-close-btn');
 const statusFilter = document.getElementById('status-filter');
+const storageKey = 'ticketwareLoggedInUser';
 let allTickets = [];
 
 function formatStatus(raw) {
@@ -40,7 +41,7 @@ function normalizeStatus(raw) {
 
 function renderTickets(tickets) {
     if (!tickets.length) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;">No tickets found for this filter.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;">No tickets found for this filter.</td></tr>`;
         return;
     }
 
@@ -51,12 +52,29 @@ function renderTickets(tickets) {
             <td>${formatDate(t.DateCreated)}</td>
             <td><button class="btn-sm" data-index="${i}">Details</button></td>
             <td>${formatStatus(t.Status)}</td>
+            <td>${renderClaimAction(t, i)}</td>
         </tr>
     `).join('');
 
     tbody.querySelectorAll('button[data-index]').forEach(btn => {
         btn.addEventListener('click', () => openModal(tickets[Number(btn.dataset.index)]));
     });
+
+    tbody.querySelectorAll('button[data-claim-index]').forEach(btn => {
+        btn.addEventListener('click', () => claimTicket(tickets[Number(btn.dataset.claimIndex)]));
+    });
+}
+
+function renderClaimAction(ticket, index) {
+    const normalized = normalizeStatus(ticket.Status);
+    const isOpen = normalized === 'open';
+    const isUnassigned = !ticket.AdminUsername && (ticket.AdminID == null || ticket.AdminID === '');
+
+    if (isOpen && isUnassigned) {
+        return `<button class="btn-sm btn-claim" data-claim-index="${index}">Claim</button>`;
+    }
+
+    return '<span style="color:#888;">—</span>';
 }
 
 function applyFilter() {
@@ -77,12 +95,12 @@ async function loadTickets() {
         const json = await res.json();
 
         if (!json.success) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#c00;">Failed to load tickets.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c00;">Failed to load tickets.</td></tr>`;
             return;
         }
 
         if (json.tickets.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888;">No tickets found.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;">No tickets found.</td></tr>`;
             return;
         }
 
@@ -91,7 +109,66 @@ async function loadTickets() {
 
     } catch (err) {
         console.error('Error loading tickets:', err);
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#c00;">Error loading tickets.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#c00;">Error loading tickets.</td></tr>`;
+    }
+}
+
+function resolveTicketId(ticket) {
+    const preferredKeys = ['ResolvedTicketId', 'ID', 'Id', 'id', 'TicketID', 'TicketId', 'ticketID', 'ticketId', 'TicketNumber', 'ticketNumber'];
+
+    for (const key of preferredKeys) {
+        if (Object.prototype.hasOwnProperty.call(ticket, key) && ticket[key] != null) {
+            return ticket[key];
+        }
+    }
+
+    const fallbackKey = Object.keys(ticket).find(k => /(^id$|ticket.?id|ticket.?number)/i.test(k) && ticket[k] != null);
+    return fallbackKey ? ticket[fallbackKey] : null;
+}
+
+async function claimTicket(ticket) {
+    const username = localStorage.getItem(storageKey);
+    const ticketId = resolveTicketId(ticket);
+
+    if (!username) {
+        alert('Please log in again before claiming tickets.');
+        return;
+    }
+
+    if (ticketId == null) {
+        alert('Unable to identify this ticket. Please refresh and try again.');
+        return;
+    }
+
+    const confirmed = window.confirm(`Claim ticket "${ticket.Title || `#${ticketId}`}"?`);
+    if (!confirmed) return;
+
+    try {
+        const res = await fetch('/api/admin-claim-ticket', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username,
+                ticketId,
+                selector: {
+                    Title: ticket.Title || '',
+                    DateCreated: ticket.DateCreated || '',
+                    Description: ticket.Description || ''
+                }
+            })
+        });
+
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+            alert(json.error || 'Failed to claim ticket.');
+            return;
+        }
+
+        await loadTickets();
+        alert('Ticket claimed successfully.');
+    } catch (err) {
+        console.error('Error claiming ticket:', err);
+        alert('Error claiming ticket.');
     }
 }
 
