@@ -25,6 +25,7 @@
                 <input type="text" id="login-identifier" name="login-identifier" placeholder="Username or Email" required>
                 <input type="password" id="login-password" name="login-password" placeholder="Password" required>
                 <p id="login-password-error"></p>
+                <div id="login-turnstile" class="turnstile-container"></div>
                 <button type="submit">Log In</button>
                 <p id="login-message"></p>
             </form>
@@ -48,6 +49,7 @@
                     <input type="checkbox" id="email-updates" name="email-updates" checked>
                     Receive email updates
                 </label>
+                <div id="signup-turnstile" class="turnstile-container"></div>
                 <button type="submit">Sign Up</button>
                 <p id="signup-message"></p>
             </form>
@@ -56,5 +58,6 @@
 
     <!-- JavaScript -->
     <script src="login-signup-page.js"></script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?onload=onTurnstileLoad&render=explicit" defer></script>
 </body>
 </html>

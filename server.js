@@ -30,9 +30,65 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANO
 
 const sendGridApiKey = process.env.SENDGRID_API_KEY
 const sendGridFromEmail = process.env.SENDGRID_FROM_EMAIL
+const turnstileSiteKey = process.env.CLOUDFLARE_TURNSTILE_SITE_KEY
+const turnstileSecretKey = process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY
 
 if (sendGridApiKey) {
     sgMail.setApiKey(sendGridApiKey)
+}
+
+function isTurnstileEnabled() {
+    return Boolean(turnstileSiteKey && turnstileSecretKey)
+}
+
+async function verifyTurnstileToken(req) {
+    if (!isTurnstileEnabled()) {
+        return { success: true, skipped: true }
+    }
+
+    const token = req.body['cf-turnstile-response']
+    if (!token) {
+        return { success: false, reason: 'missing-input-response' }
+    }
+
+    try {
+        const payload = new URLSearchParams({
+            secret: turnstileSecretKey,
+            response: token
+        })
+
+        if (req.ip) {
+            payload.append('remoteip', req.ip)
+        }
+
+        const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: payload
+        })
+
+        if (!response.ok) {
+            return { success: false, reason: 'verification_unavailable' }
+        }
+
+        const verification = await response.json()
+
+        if (!verification.success) {
+            return {
+                success: false,
+                reason: Array.isArray(verification['error-codes']) && verification['error-codes'].length > 0
+                    ? verification['error-codes'][0]
+                    : 'verification_failed'
+            }
+        }
+
+        return { success: true }
+    } catch (err) {
+        console.error('Turnstile verification error:', err)
+        return { success: false, reason: 'verification_unavailable' }
+    }
 }
 
 /**
@@ -53,6 +109,13 @@ app.get("/", (req, res) => {
     res.send('index.html')
 })
 
+app.get('/api/auth-config', (req, res) => {
+    res.json({
+        turnstileEnabled: isTurnstileEnabled(),
+        turnstileSiteKey: turnstileSiteKey || ''
+    })
+})
+
 function validatePassword(password) {
     if (password.length < 8 || password.length > 64) return false;
     if (!/[A-Z]/.test(password)) return false;
@@ -68,6 +131,14 @@ app.post('/login', async (req, res) => {
     
     if (!normalizedIdentifier || !password) {
         return res.redirect('/?error=missing_login_fields');
+    }
+
+    const captchaVerification = await verifyTurnstileToken(req)
+    if (!captchaVerification.success) {
+        const captchaError = captchaVerification.reason === 'missing-input-response'
+            ? 'login_captcha_required'
+            : 'login_captcha_failed'
+        return res.redirect(`/?error=${captchaError}`)
     }
     
     try {
@@ -101,6 +172,14 @@ app.post('/signup', async (req, res) => {
     
     if (!firstName || !lastName || !email || !username || !password || !confirmPassword) {
         return res.redirect('/?error=missing_fields');
+    }
+
+    const captchaVerification = await verifyTurnstileToken(req)
+    if (!captchaVerification.success) {
+        const captchaError = captchaVerification.reason === 'missing-input-response'
+            ? 'signup_captcha_required'
+            : 'signup_captcha_failed'
+        return res.redirect(`/?error=${captchaError}`)
     }
     
     if (password !== confirmPassword) {

@@ -104,6 +104,12 @@ body {
     color: red;
 }
 
+.turnstile-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0 15px;
+}
+
 #title {
     text-align: center;
     margin-bottom: 20px;

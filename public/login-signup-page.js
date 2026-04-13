@@ -6,6 +6,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const signupForm = document.getElementById("signup-form");
     const loginMessage = document.getElementById("login-message");
     const signupMessage = document.getElementById("signup-message");
+    const loginTurnstileContainer = document.getElementById("login-turnstile");
+    const signupTurnstileContainer = document.getElementById("signup-turnstile");
     const signupPasswordInput = document.getElementById("signup-password");
     const signupPasswordReq = {
         length: document.getElementById("signup-password-length"),
@@ -13,46 +15,111 @@ document.addEventListener("DOMContentLoaded", () => {
         digit: document.getElementById("signup-password-digit"),
         special: document.getElementById("signup-password-special"),
     };
+    const turnstileState = {
+        loaded: false,
+        enabled: false,
+        siteKey: "",
+        loginWidgetId: null,
+        signupWidgetId: null,
+    };
+
+    const setFormState = (mode) => {
+        const showLogin = mode === "login";
+        loginForm.classList.toggle("active", showLogin);
+        signupForm.classList.toggle("active", !showLogin);
+        loginToggle.classList.toggle("active", showLogin);
+        signupToggle.classList.toggle("active", !showLogin);
+    };
+
+    const clearMessages = () => {
+        loginMessage.textContent = "";
+        signupMessage.textContent = "";
+        document.getElementById("login-password-error").textContent = "";
+        document.getElementById("confirm-password-error").textContent = "";
+    };
+
+    const showMessage = (element, text) => {
+        element.textContent = text;
+        element.style.color = "red";
+    };
+
+    const getWidgetIdForForm = (formType) => {
+        return formType === "login" ? turnstileState.loginWidgetId : turnstileState.signupWidgetId;
+    };
+
+    const renderTurnstileWidgets = () => {
+        if (!turnstileState.loaded || !turnstileState.enabled || !window.turnstile) {
+            return;
+        }
+
+        if (turnstileState.loginWidgetId === null && loginTurnstileContainer) {
+            turnstileState.loginWidgetId = window.turnstile.render(loginTurnstileContainer, {
+                sitekey: turnstileState.siteKey,
+                theme: "light"
+            });
+        }
+
+        if (turnstileState.signupWidgetId === null && signupTurnstileContainer) {
+            turnstileState.signupWidgetId = window.turnstile.render(signupTurnstileContainer, {
+                sitekey: turnstileState.siteKey,
+                theme: "light"
+            });
+        }
+    };
+
+    window.onTurnstileLoad = () => {
+        turnstileState.loaded = true;
+        renderTurnstileWidgets();
+    };
+
+    fetch("/api/auth-config")
+        .then((response) => response.json())
+        .then((config) => {
+            turnstileState.enabled = Boolean(config.turnstileEnabled && config.turnstileSiteKey);
+            turnstileState.siteKey = config.turnstileSiteKey || "";
+            renderTurnstileWidgets();
+        })
+        .catch(() => {
+            turnstileState.enabled = false;
+        });
 
     // Check for error messages from server
     const urlParams = new URLSearchParams(window.location.search);
     const error = urlParams.get('error');
     if (error) {
         if (error === 'invalid_credentials') {
-            loginMessage.textContent = "Invalid username/email or password.";
-            loginMessage.style.color = "red";
-            loginForm.classList.add("active");
-            signupForm.classList.remove("active");
-            loginToggle.classList.add("active");
-            signupToggle.classList.remove("active");
+            showMessage(loginMessage, "Invalid username/email or password.");
+            setFormState("login");
         } else if (error === 'missing_login_fields') {
-            loginMessage.textContent = "Please enter your username/email and password.";
-            loginMessage.style.color = "red";
-            loginForm.classList.add("active");
-            signupForm.classList.remove("active");
-            loginToggle.classList.add("active");
-            signupToggle.classList.remove("active");
+            showMessage(loginMessage, "Please enter your username/email and password.");
+            setFormState("login");
+        } else if (error === 'login_captcha_required') {
+            showMessage(loginMessage, "Please complete the CAPTCHA.");
+            setFormState("login");
+        } else if (error === 'login_captcha_failed') {
+            showMessage(loginMessage, "CAPTCHA verification failed. Please try again.");
+            setFormState("login");
         } else if (error === 'password_invalid') {
-            signupMessage.textContent = "Password does not meet the requirements.";
-            signupMessage.style.color = "red";
-            signupForm.classList.add("active");
-            loginForm.classList.remove("active");
-            signupToggle.classList.add("active");
-            loginToggle.classList.remove("active");
+            showMessage(signupMessage, "Password does not meet the requirements.");
+            setFormState("signup");
         } else if (error === 'password_mismatch') {
-            signupMessage.textContent = "Passwords do not match.";
-            signupMessage.style.color = "red";
-            signupForm.classList.add("active");
-            loginForm.classList.remove("active");
-            signupToggle.classList.add("active");
-            loginToggle.classList.remove("active");
+            showMessage(signupMessage, "Passwords do not match.");
+            setFormState("signup");
         } else if (error === 'missing_fields') {
-            signupMessage.textContent = "Please fill in all fields.";
-            signupMessage.style.color = "red";
-            signupForm.classList.add("active");
-            loginForm.classList.remove("active");
-            signupToggle.classList.add("active");
-            loginToggle.classList.remove("active");
+            showMessage(signupMessage, "Please fill in all fields.");
+            setFormState("signup");
+        } else if (error === 'signup_captcha_required') {
+            showMessage(signupMessage, "Please complete the CAPTCHA.");
+            setFormState("signup");
+        } else if (error === 'signup_captcha_failed') {
+            showMessage(signupMessage, "CAPTCHA verification failed. Please try again.");
+            setFormState("signup");
+        } else if (error === 'signup_failed') {
+            showMessage(signupMessage, "Unable to create the account. Please try again.");
+            setFormState("signup");
+        } else if (error === 'server_error') {
+            showMessage(loginMessage, "Server error. Please try again.");
+            setFormState("login");
         }
     }
 
@@ -70,27 +137,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Toggle between login and signup forms
     loginToggle.addEventListener("click", () => {
-        loginToggle.classList.add("active");
-        signupToggle.classList.remove("active");
-        loginForm.classList.add("active");
-        signupForm.classList.remove("active");
-        loginMessage.textContent = "";
-        signupMessage.textContent = "";
-        document.getElementById("login-password-error").textContent = "";
-        document.getElementById("confirm-password-error").textContent = "";
+        setFormState("login");
+        clearMessages();
         updateSignupPasswordRequirements("");
     });
 
     signupToggle.addEventListener("click", () => {
-        signupToggle.classList.add("active");
-        loginToggle.classList.remove("active");
-        signupForm.classList.add("active");
-        loginForm.classList.remove("active");
-        loginMessage.textContent = "";
-        signupMessage.textContent = "";
-        document.getElementById("login-password-error").textContent = "";
-        document.getElementById("confirm-password-error").textContent = "";
+        setFormState("signup");
+        clearMessages();
         updateSignupPasswordRequirements(signupPasswordInput.value);
+    });
+
+    const handleCaptchaSubmission = (event, formType, messageElement) => {
+        if (!turnstileState.enabled || !window.turnstile) {
+            return;
+        }
+
+        const widgetId = getWidgetIdForForm(formType);
+        const token = widgetId !== null ? window.turnstile.getResponse(widgetId) : "";
+
+        if (token) {
+            return;
+        }
+
+        event.preventDefault();
+        showMessage(messageElement, "Please complete the CAPTCHA.");
+    };
+
+    loginForm.addEventListener("submit", (event) => {
+        handleCaptchaSubmission(event, "login", loginMessage);
+    });
+
+    signupForm.addEventListener("submit", (event) => {
+        handleCaptchaSubmission(event, "signup", signupMessage);
     });
 
     signupPasswordInput.addEventListener("input", function() {
