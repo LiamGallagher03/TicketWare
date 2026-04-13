@@ -15,6 +15,7 @@ const express = require('express')
 require('dotenv').config()
 const { createClient } = require('@supabase/supabase-js')
 const bcrypt = require('bcrypt')
+const sgMail = require('@sendgrid/mail')
 
 
 /**
@@ -26,6 +27,13 @@ const PORT = 8080
 
 // Initialize Supabase client
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
+
+const sendGridApiKey = process.env.SENDGRID_API_KEY
+const sendGridFromEmail = process.env.SENDGRID_FROM_EMAIL
+
+if (sendGridApiKey) {
+    sgMail.setApiKey(sendGridApiKey)
+}
 
 /**
  * These lines allow express to view static files. In short, this lets express use HTML, CSS, Javascrips, and Image files
@@ -184,6 +192,49 @@ function resolveTicketIdentity(ticketData) {
     return { column: null, value: null }
 }
 
+function statusLabel(status) {
+    const normalized = (status || '').toString().trim().toUpperCase()
+    if (normalized === 'CREATED' || normalized === 'O' || normalized === 'OPEN') return 'Created'
+    if (normalized === 'P' || normalized === 'PENDING' || normalized === 'CLAIMED') return 'Pending'
+    if (normalized === 'C' || normalized === 'CLOSED') return 'Closed'
+    return normalized || 'Updated'
+}
+
+async function sendTicketStatusEmail(clientID, ticketTitle, newStatus) {
+    if (!sendGridApiKey || !sendGridFromEmail) {
+        return
+    }
+
+    try {
+        const { data: accounts, error: accountError } = await supabase
+            .from('Accounts')
+            .select('*')
+
+        if (accountError || !accounts) {
+            console.error('Error fetching client account for email notification:', accountError)
+            return
+        }
+
+        const clientAccount = accounts.find(a => String(resolveAccountId(a)) === String(clientID))
+        if (!clientAccount || !clientAccount.Email) {
+            return
+        }
+
+        const prettyStatus = statusLabel(newStatus)
+        const safeTitle = ticketTitle || 'Untitled Ticket'
+
+        await sgMail.send({
+            to: clientAccount.Email,
+            from: sendGridFromEmail,
+            subject: `Ticket Update: ${safeTitle} is now ${prettyStatus}`,
+            text: `Hello ${clientAccount.Name || clientAccount.Username || 'there'},\n\nYour ticket "${safeTitle}" has a new status: ${prettyStatus}.\n\nThanks,\nTicketWare`,
+            html: `<p>Hello ${clientAccount.Name || clientAccount.Username || 'there'},</p><p>Your ticket <strong>${safeTitle}</strong> has a new status: <strong>${prettyStatus}</strong>.</p><p>Thanks,<br/>TicketWare</p>`
+        })
+    } catch (err) {
+        console.error('Error sending ticket status email:', err)
+    }
+}
+
 app.get('/api/user-tickets', async (req, res) => {
     try {
         const { username } = req.query
@@ -305,6 +356,8 @@ app.post('/api/create-ticket', async (req, res) => {
             console.error('Error creating ticket:', error)
             return res.status(500).json({ error: error.message })
         }
+
+        await sendTicketStatusEmail(clientID, title, 'CREATED')
         
         res.json({
             success: true,
@@ -525,6 +578,8 @@ app.post('/api/admin-close-ticket', async (req, res) => {
             return res.status(500).json({ error: updateError.message })
         }
 
+        await sendTicketStatusEmail(matchedTicket.ClientID, matchedTicket.Title, 'C')
+
         res.json({ success: true, message: 'Ticket closed successfully.' })
     } catch (err) {
         console.error('Server error while closing ticket:', err)
@@ -599,7 +654,7 @@ app.post('/api/admin-claim-ticket', async (req, res) => {
 
         const { data: updatedRows, error: updateError } = await supabase
             .from('Tickets')
-            .update({ AdminID: adminID })
+            .update({ AdminID: adminID, Status: 'P' })
             .eq(ticketIdColumn, matchedTicketId)
             .eq('Status', matchedTicket.Status)
             .is('AdminID', null)
@@ -613,6 +668,8 @@ app.post('/api/admin-claim-ticket', async (req, res) => {
         if (!updatedRows || updatedRows.length === 0) {
             return res.status(409).json({ error: 'Ticket was already claimed by another admin.' })
         }
+
+        await sendTicketStatusEmail(matchedTicket.ClientID, matchedTicket.Title, 'P')
 
         res.json({ success: true, message: 'Ticket claimed successfully.' })
     } catch (err) {
