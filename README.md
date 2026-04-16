@@ -54,19 +54,6 @@ npx nodemon server.js
 
 Once the server is up and running on a computer, for individual testing purposes that server can be connected to with any web browser at localhost:`PORT`. By default `PORT` should be 8080, but check `server.js` to verify if localhost:8080 doesn't work.
 
-## Cloudflare Turnstile
-
-Login and signup support Cloudflare Turnstile.
-
-Add these variables to `.env` to enable it:
-
-```env
-CLOUDFLARE_TURNSTILE_SITE_KEY=your_site_key
-CLOUDFLARE_TURNSTILE_SECRET_KEY=your_secret_key
-```
-
-Without both variables present, the login and signup forms continue to work without CAPTCHA so local development does not break.
-
 ## Technologies
 Project is primarily made with HTML/CSS/Javascript. The following external/third party tecchnologies are used:
 
